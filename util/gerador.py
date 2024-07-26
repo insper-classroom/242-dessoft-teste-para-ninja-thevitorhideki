@@ -2,7 +2,7 @@ from random import randint, shuffle
 
 
 def gera_numeros():
-    target = randint(4, 20)
+    target = randint(6, 25)
 
     first = randint(1, target - 1)
     second = randint(1, target - 1)

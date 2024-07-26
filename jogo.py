@@ -10,20 +10,31 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Ninja")
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 48)
+
+# Variável de controle do loop do jogo
 running = True
 
+# Número sorteados
 numbers = gera_numeros()
 
+# Estados do jogo
 game_state = {
     'menu': True,
     'playing': False,
-    'result': False,
     'game_over': False
 }
 
-block1_visible = True
-block2_visible = True
-block3_visible = True
+# Blocos
+block_visible = [True, True, True]
+block_rects = [
+    pygame.Rect((WIDTH/2-50, HEIGHT-150), (100, 100)),
+    pygame.Rect((WIDTH/2-50, HEIGHT-250), (100, 100)),
+    pygame.Rect((WIDTH/2-50, HEIGHT-350), (100, 100)),
+]
+block_colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
+
+# Chão
+ground = pygame.Rect((0, HEIGHT-50), (WIDTH, 50))
 
 # Respostas
 correct = font.render("Certo!", True, (0, 255, 0))
@@ -38,145 +49,97 @@ correct_answers = 0
 
 # Vidas
 lives = 3
-hasClicked = False
+has_clicked = False
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN and game_state['menu']:
+            
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
-            if play_button.collidepoint(mouse_pos):
-                start_time_game = pygame.time.get_ticks()
-                game_state['menu'] = False
-                game_state['playing'] = True
-        elif event.type == pygame.MOUSEBUTTONDOWN and game_state['playing']:
-            mouse_pos = pygame.mouse.get_pos()
-            if block1_rect.collidepoint(mouse_pos):
-                current_time = pygame.time.get_ticks()
-                block1_visible = False
-                hasClicked = True
-                game_state['result'] = True
-                game_state['playing'] = False
-            elif block2_rect.collidepoint(mouse_pos):
-                current_time = pygame.time.get_ticks()
-                block2_visible = False
-                hasClicked = True
-                game_state['result'] = True
-                game_state['playing'] = False
-            elif block3_rect.collidepoint(mouse_pos):
-                current_time = pygame.time.get_ticks()
-                block3_visible = False
-                hasClicked = True
-                game_state['result'] = True
-                game_state['playing'] = False
+            
+            if game_state['menu']:
+                if play_button.collidepoint(mouse_pos):
+                    game_state['menu'] = False
+                    game_state['playing'] = True
+                    start_time_game = pygame.time.get_ticks()
+                    
+            elif game_state['playing']:
+                for i, rect in enumerate(block_rects):
+                    if rect.collidepoint(mouse_pos) and block_visible[i]:
+                        current_time = pygame.time.get_ticks()
+                        block_visible[i] = False
+                        has_clicked = True
 
     screen.fill("white")
 
     if game_state['menu']:
         pygame.draw.rect(screen, (200, 200, 200), play_button)
-        screen.blit(play_button_text, play_button_text.get_rect(
-            center=(WIDTH/2, HEIGHT/2)))
+        screen.blit(play_button_text, play_button_text.get_rect(center=(WIDTH/2, HEIGHT/2)))
+
     elif game_state['game_over']:
-        score_text = font.render(
-            f"Você teve {correct_answers} respostas corretas", True, (0, 0, 0))
-        screen.blit(score_text, score_text.get_rect(
-            center=(WIDTH/2, HEIGHT/2)))
-    else:
+        score_text = font.render(f"Você teve {correct_answers} respostas corretas", True, (0, 0, 0))
+        screen.blit(score_text, score_text.get_rect(center=(WIDTH/2, HEIGHT/2)))
+
+    elif game_state['playing']:
         current_time_game = pygame.time.get_ticks()
         elapsed_time = current_time_game - start_time_game
+        
         if elapsed_time >= 60000:
             game_state['playing'] = False
             game_state['game_over'] = True
 
-        elapsed_text = font.render(
-            f"{math.ceil((60000-elapsed_time)/1000)}", True, (0, 0, 0))
+        # Timer
+        elapsed_text = font.render(f"{math.ceil((60000-elapsed_time)/1000)}", True, (0, 0, 0))
         screen.blit(elapsed_text, (WIDTH-65, 20))
 
-        text_numbers = [font.render(f"{numbers[i]}", True, (0, 0, 0))
-                        for i in range(0, 3)]
+        text_numbers = [font.render(f"{numbers[i]}", True, (0, 0, 0)) for i in range(0, 3)]
+        # text_numbers = []
+        # for i in range(3):
+        #     text_numbers.append(font.render(f"{numbers[i]}", True, (0, 0, 0)))
+        
+        # Número alvo
         target = font.render(f"{numbers[-1]}", True, (0, 0, 0))
-        block1_rect = pygame.Rect((WIDTH/2-50, HEIGHT-150), (100, 100))
-        block2_rect = pygame.Rect((WIDTH/2-50, HEIGHT-250), (100, 100))
-        block3_rect = pygame.Rect((WIDTH/2-50, HEIGHT-350), (100, 100))
 
         # Chão
-        pygame.draw.rect(screen, (200, 200, 200),
-                         pygame.Rect((0, HEIGHT-50), (WIDTH, 50)))
+        pygame.draw.rect(screen, (200, 200, 200), ground)
 
         # Blocos e números
-        if (block1_visible):
-            pygame.draw.rect(screen, (0, 0, 255), block1_rect)
-            screen.blit(text_numbers[0], text_numbers[0].get_rect(
-                center=(block1_rect.center)))
-        else:
-            if (numbers[1] + numbers[2] == numbers[3]):
-                screen.blit(correct, correct.get_rect(
-                    center=(block1_rect.center)))
-                if hasClicked:
-                    correct_answers += 1
-                    hasClicked = False
+        for i, block in enumerate(block_rects):
+            if (block_visible[i]):
+                pygame.draw.rect(screen, block_colors[i], block)
+                screen.blit(text_numbers[i], text_numbers[i].get_rect(center=(block.center)))
             else:
-                screen.blit(wrong, wrong.get_rect(
-                    center=(block1_rect.center)))
-                if hasClicked:
-                    lives -= 1
-                    hasClicked = False
-
-        if (block2_visible):
-            pygame.draw.rect(screen, (0, 255, 0), block2_rect)
-            screen.blit(text_numbers[1], text_numbers[1].get_rect(
-                center=(block2_rect.center)))
-        else:
-            if (numbers[0] + numbers[2] == numbers[3]):
-                screen.blit(correct, correct.get_rect(
-                    center=(block2_rect.center)))
-                if hasClicked:
-                    correct_answers += 1
-                    hasClicked = False
-            else:
-                screen.blit(wrong, wrong.get_rect(
-                    center=(block2_rect.center)))
-                if hasClicked:
-                    lives -= 1
-                    hasClicked = False
-
-        if (block3_visible):
-            pygame.draw.rect(screen, (255, 0, 0), block3_rect)
-            screen.blit(text_numbers[2], text_numbers[2].get_rect(
-                center=(block3_rect.center)))
-        else:
-            if (numbers[0] + numbers[1] == numbers[3]):
-                screen.blit(correct, correct.get_rect(
-                    center=(block3_rect.center)))
-                if hasClicked:
-                    correct_answers += 1
-                    hasClicked = False
-            else:
-                screen.blit(wrong, wrong.get_rect(
-                    center=(block3_rect.center)))
-                if hasClicked:
-                    lives -= 1
-                    hasClicked = False
+                if (sum(numbers[:-1]) - numbers[i] == numbers[-1]):
+                    screen.blit(correct, correct.get_rect(center=(block.center)))
+                    if has_clicked:
+                        correct_answers += 1
+                        has_clicked = False
+                else:
+                    screen.blit(wrong, wrong.get_rect(center=(block.center)))
+                    if has_clicked:
+                        lives -= 1
+                        has_clicked = False
 
         # Alvo
         screen.blit(target, (25, 25))
 
-        if game_state['result']:
+        # Verifica se algum bloco não está visível (foi clicado)
+        if block_visible.count(True) < 3:
             start_time = pygame.time.get_ticks()
             elapsed_time = start_time - current_time
+            
             if elapsed_time >= 1000:
                 if lives == 0:
-                    game_state['result'] = False
+                    game_state['playing'] = False
                     game_state['game_over'] = True
                 else:
-                    block1_visible = True
-                    block2_visible = True
-                    block3_visible = True
-                    game_state['result'] = False
-                    game_state['playing'] = True
+                    block_visible = [True, True, True]
                     numbers = gera_numeros()
 
     pygame.display.flip()
     clock.tick(60)
+
+pygame.quit()
