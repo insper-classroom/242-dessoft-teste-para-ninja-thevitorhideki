@@ -68,7 +68,7 @@ while running:
                     
             elif game_state['playing']:
                 for i, rect in enumerate(block_rects):
-                    if rect.collidepoint(mouse_pos) and block_visible[i]:
+                    if rect.collidepoint(mouse_pos) and block_visible.count(True) == 3:
                         current_time = pygame.time.get_ticks()
                         block_visible[i] = False
                         has_clicked = True
@@ -95,13 +95,16 @@ while running:
         elapsed_text = font.render(f"{math.ceil((60000-elapsed_time)/1000)}", True, (0, 0, 0))
         screen.blit(elapsed_text, (WIDTH-65, 20))
 
-        text_numbers = [font.render(f"{numbers[i]}", True, (0, 0, 0)) for i in range(0, 3)]
-        # text_numbers = []
-        # for i in range(3):
-        #     text_numbers.append(font.render(f"{numbers[i]}", True, (0, 0, 0)))
+        # Números dos blocos
+        text_numbers = [
+            font.render(f"{numbers[0]}", True, (0, 0, 0)),
+            font.render(f"{numbers[1]}", True, (0, 0, 0)),
+            font.render(f"{numbers[2]}", True, (0, 0, 0))
+        ]
         
         # Número alvo
         target = font.render(f"{numbers[-1]}", True, (0, 0, 0))
+        screen.blit(target, (25, 25))
 
         # Chão
         pygame.draw.rect(screen, (200, 200, 200), ground)
@@ -122,9 +125,6 @@ while running:
                     if has_clicked:
                         lives -= 1
                         has_clicked = False
-
-        # Alvo
-        screen.blit(target, (25, 25))
 
         # Verifica se algum bloco não está visível (foi clicado)
         if block_visible.count(True) < 3:
